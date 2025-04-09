@@ -1,0 +1,124 @@
+# Binary representation of the provided MIPS assembly code
+
+# main:
+# la $s0, arr
+3C100000  # lui $s0, high(arr)
+36100000  # ori $s0, $s0, low(arr)
+
+# la $s1, temp
+3C110000  # lui $s1, high(temp)
+36310000  # ori $s1, $s1, low(temp)
+
+# la $s2, indices
+3C120000  # lui $s2, high(indices)
+36520000  # ori $s2, $s2, low(indices)
+
+# lwc1 $f10, ten
+C4520000  # lwc1 $f10, 0($s2)
+
+# li $t0, 0
+20080000  # addi $t0, $zero, 0
+
+# li $t1, 0
+20090000  # addi $t1, $zero, 0
+
+# temp_maker:
+# lwc1 $f0, arr($t0)
+C4000000  # lwc1 $f0, 0($t0)
+
+# mov.s $f2, $f0
+46000002  # mov.s $f2, $f0
+
+# mul.s $f0, $f0, $f10
+460A0002  # mul.s $f0, $f10, $f0
+
+# trunc.w.s $f0, $f0
+4600000D  # trunc.w.s $f0, $f0
+
+# mfc1 $t2, $f0
+440A0000  # mfc1 $t2, $f0
+
+# move $t3, $t2
+000A5820  # add $t3, $zero, $t2
+
+# mul $t2, $t2, 40
+000A2040  # sll $t2, $t2, 2
+000A2040  # sll $t2, $t2, 2
+000A2040  # sll $t2, $t2, 2
+
+# add $t2, $t2, $s1
+02124020  # add $t2, $t2, $s1
+
+# mul $t3, $t3, 4
+000B2040  # sll $t3, $t3, 2
+
+# add $t3, $t3, $s2
+02134020  # add $t3, $t3, $s2
+
+# lw $t4, 0($t3)
+8D640000  # lw $t4, 0($t3)
+
+# add $t4, $t4, 1
+21840001  # addi $t4, $t4, 1
+
+# sw $t4, 0($t3)
+AD640000  # sw $t4, 0($t3)
+
+# addi $t4, $t4, -1
+2184FFFF  # addi $t4, $t4, -1
+
+# sll $t4, $t4, 2
+00042040  # sll $t4, $t4, 2
+
+# add $t4, $t4, $t2
+018A2020  # add $t4, $t4, $t2
+
+# swc1 $f2, 0($t4)
+E4420000  # swc1 $f2, 0($t4)
+
+# addi $t1, $t1, 1
+21290001  # addi $t1, $t1, 1
+
+# addi $t0, $t0, 4
+21080004  # addi $t0, $t0, 4
+
+# bne $t1, 8, temp_maker
+15080008  # bne $t1, $t0, temp_maker
+
+# li $t0, 0
+20080000  # addi $t0, $zero, 0
+
+# bucket_travel:
+# mul $t1, $t0, 40
+00082040  # sll $t1, $t0, 2
+00082040  # sll $t1, $t0, 2
+00082040  # sll $t1, $t0, 2
+
+# add $t1, $t1, $s1
+02114020  # add $t1, $t1, $s1
+
+# move $a1, $t1
+00052020  # add $a1, $zero, $t1
+
+# mul $t2, $t0, 4
+00082040  # sll $t2, $t0, 2
+
+# add $t2, $t2, $s2
+02124020  # add $t2, $t2, $s2
+
+# move $a2, $t2
+00052020  # add $a2, $zero, $t2
+
+# insertionsort:
+# move $s6, $a1
+00052020  # add $s6, $zero, $a1
+
+# lw $s7, 0($a2)
+8D670000  # lw $s7, 0($a2)
+
+# li $t3, 1
+200B0001  # addi $t3, $zero, 1
+
+# loop:
+# bge $t3, $s7, end
+000B2020  # add $t3, $zero, $s7
