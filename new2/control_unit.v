@@ -18,7 +18,9 @@ module control_unit (
     output reg fp_reg_read,
     output reg fp_operation,
     output reg move_fp_to_cpu,
-    output reg move_cpu_to_fp
+    output reg move_cpu_to_fp,
+    output reg hi_write,
+    output reg lo_write
 );
     // R-type instructions
     parameter R_TYPE = 6'b000000;
@@ -43,6 +45,14 @@ module control_unit (
     parameter LWC1 = 6'b110001;
     parameter SWC1 = 6'b111001;
     parameter CP1 = 6'b010001;
+
+    // Unsigned arithmetic instructions
+    parameter ADDIU = 6'b001001;
+    parameter SLTIU = 6'b001011;
+
+    // Additional branching instructions
+    parameter BLEZ = 6'b000110;
+    parameter BGTZ = 6'b000111;
     
     always @(*) begin
         // Default values
@@ -60,12 +70,25 @@ module control_unit (
         fp_operation = 0;
         move_fp_to_cpu = 0;
         move_cpu_to_fp = 0;
+        hi_write = 0;
+        lo_write = 0;
         
         case(opcode)
-            R_TYPE: begin
-                reg_dst = 1;
-                reg_write = 1;
-                alu_op = 2'b10;
+            R_TYPE: begin // R-type
+                reg_dst = 1; alu_src = 0; mem_to_reg = 0; reg_write = 1; mem_read = 0; mem_write = 0; branch = 0; alu_op = 2'b10;
+                case(funct)
+                    6'b100000,6'b100001,6'b100010,6'b100011,6'b100100,6'b100101,6'b100110,6'b100111,6'b000000,6'b000010,6'b000011,6'b101010,6'b101011: ; // Standard R-type
+                    6'b011000: begin // MUL
+                        hi_write = 1; lo_write = 1;
+                    end
+                    6'b000100: begin // MADD
+                        hi_write = 1; lo_write = 1;
+                    end
+                    6'b000101: begin // MADDU
+                        hi_write = 1; lo_write = 1;
+                    end
+                    default: ;
+                endcase
             end
             
             LW: begin
@@ -88,7 +111,16 @@ module control_unit (
             BNE: begin
                 branch = 1;
                 alu_op = 2'b01;
-                // Additional control for BNE vs BEQ
+            end
+            
+            BLEZ: begin
+                branch = 1;
+                alu_op = 2'b01;
+            end
+            
+            BGTZ: begin
+                branch = 1;
+                alu_op = 2'b01;
             end
             
             J: begin
@@ -96,6 +128,11 @@ module control_unit (
             end
             
             ADDI: begin
+                alu_src = 1;
+                reg_write = 1;
+            end
+            
+            ADDIU: begin
                 alu_src = 1;
                 reg_write = 1;
             end
@@ -111,7 +148,7 @@ module control_unit (
                 alu_src = 1;
                 reg_write = 1;
                 mem_to_reg = 0;
-                alu_op = 2'b11; // Special ALU op for OR
+                alu_op = 2'b11;
             end
             
             XORI: begin
@@ -124,15 +161,18 @@ module control_unit (
                 alu_src = 1;
                 reg_write = 1;
                 mem_to_reg = 0;
-                // Special LUI handling
             end
             
-            // Floating-point instructions
+            SLTIU: begin
+                alu_src = 1;
+                reg_write = 1;
+            end
+            
             LWC1: begin
                 alu_src = 1;
                 mem_read = 1;
                 fp_reg_write = 1;
-                mem_to_reg = 0; // Important: Data comes from memory, not ALU
+                mem_to_reg = 0;
             end
             
             SWC1: begin
@@ -142,21 +182,17 @@ module control_unit (
             end
             
             CP1: begin
-                // Decode CP1 instructions based on the rs field (instruction[25:21])
                 case(funct)
-                    // MFC1: Move From Coprocessor 1
-                    6'b000000: begin
+                    6'b000000: begin // MFC1
                         reg_write = 1;
                         move_fp_to_cpu = 1;
                     end
                     
-                    // MTC1: Move To Coprocessor 1
-                    6'b000100: begin
+                    6'b000100: begin // MTC1
                         fp_reg_write = 1;
                         move_cpu_to_fp = 1;
                     end
                     
-                    // Floating-point operations
                     default: begin
                         fp_operation = 1;
                         fp_reg_write = 1;
@@ -164,9 +200,7 @@ module control_unit (
                 endcase
             end
             
-            default: begin
-                // Default values already set
-            end
+            default: ;
         endcase
     end
 endmodule

@@ -1,5 +1,8 @@
 `timescale 1ns/1ps
 
+// Floating-point register file for IITK-Mini-MIPS
+// 32 FPRs, all initialized to zero
+
 module fp_register_file (
     input clk,
     input fp_reg_write,
@@ -16,18 +19,18 @@ module fp_register_file (
     integer i;
     initial begin
         for (i = 0; i < 32; i = i + 1) begin
-            fp_registers[i] = 32'b0;
+            fp_registers[i] = 32'b0; // Initialize all FPRs to zero
         end
     end
     
     // Read operations (asynchronous)
-    assign read_data1 = fp_registers[read_reg1];//at the exact instance
-    assign read_data2 = fp_registers[read_reg2];
+    assign read_data1 = fp_registers[read_reg1]; // Read data from register 1
+    assign read_data2 = fp_registers[read_reg2]; // Read data from register 2
     
     // Write operation (synchronous)
-    always @(posedge clk) begin//only at posedge of clock
-        if (fp_reg_write) begin//fpregwrite jab on ho
-            fp_registers[write_reg] <= write_data;//tab hi write karo
+    always @(posedge clk) begin // Write data at the positive edge of the clock
+        if (fp_reg_write) begin // Perform write operation when fp_reg_write is enabled
+            fp_registers[write_reg] <= write_data; // Write data to the specified register
 //            $display("FP REG WRITE: Reg=%d, Data=%h", write_reg, write_data); testing
         end
     end

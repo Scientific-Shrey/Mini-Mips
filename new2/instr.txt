@@ -1,1 +1,2 @@
 this is the code from V4
+// NOTE: This file is not used in the current simulation. See instruction_memory.v for instructions.

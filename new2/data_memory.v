@@ -8,6 +8,8 @@ module data_memory (
     input [31:0] write_data,
     output [31:0] read_data
 );
+    // Data memory for IITK-Mini-MIPS
+    // 512 words of 32-bit memory
     reg [31:0] memory [0:511]; // 512 words of 32-bit memory
     integer i;
 

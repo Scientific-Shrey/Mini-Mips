@@ -15,6 +15,11 @@ module iitk_mini_mips (
     wire jump, fp_reg_write, fp_reg_read, fp_operation, move_fp_to_cpu, move_cpu_to_fp;
     wire [31:0] fp_read_data1, fp_read_data2, fp_write_data;
     wire fp_compare_result;
+
+    // Wires for hi and lo registers
+    wire [31:0] hi, lo;
+    wire hi_write, lo_write;
+    wire [31:0] alu_hi, alu_lo;
     
     // PC
     pc_register pc_inst (
@@ -63,8 +68,14 @@ module iitk_mini_mips (
             move_fp_to_cpu ? fp_read_data1 : 
             mem_to_reg ? mem_data : alu_result
         ),
+        .hi_in(alu_hi),
+        .lo_in(alu_lo),
+        .hi_write(hi_write),
+        .lo_write(lo_write),
         .read_data1(read_data1),
-        .read_data2(read_data2)
+        .read_data2(read_data2),
+        .hi(hi),
+        .lo(lo)
     );
     
     // FP-Reg
@@ -94,11 +105,20 @@ module iitk_mini_mips (
     alu alu_inst (
         .input1(read_data1),
         .input2(alu_src ? sign_ext_imm : read_data2),
+        .shamt(instruction[10:6]),
         .alu_control(alu_control),
+        .hi_in(hi),
+        .lo_in(lo),
         .result(alu_result),
+        .hi_out(alu_hi),
+        .lo_out(alu_lo),
         .zero(zero),
         .fp_compare_result(fp_compare_result)
     );
+
+    // Ensure hi and lo registers are accessible in the data path
+    assign hi = (instruction[15:11] == 5'b11110) ? alu_result : hi;
+    assign lo = (instruction[15:11] == 5'b11111) ? alu_result : lo;
 
     // Data Memory
     data_memory dm_inst (
@@ -119,13 +139,13 @@ module iitk_mini_mips (
     // Write Register Selection
     assign write_reg = reg_dst ? instruction[15:11] : instruction[20:16];//rt ya rd mai choice, is dependent of reg_dst
 
-    // PC Update Logic (enhanced with jump)
+    // PC Update Logic (enhanced with jump and branching)
     assign pc_in = 
-                   jump ? {pc_out[31:28], instruction[25:0], 2'b00} ://jump hai to pcout pe
-                   (branch & zero) ? pc_out + (sign_ext_imm << 2) ://nahi hai to branch+ zero agar on hai tabhi pcout + kitna aage
-                   pc_out + 4;//or just next step
+                   jump ? {pc_out[31:28], instruction[25:0], 2'b00} : // Jump to target address
+                   (branch & zero) ? pc_out + (sign_ext_imm << 2) : // Branch if condition met
+                   pc_out + 4; // Default to next instruction
 
-    // logic to trace PC and instructions
+    // Logic to trace PC and instructions
     /*
     always @(posedge clk) begin
         if (!reset) begin
